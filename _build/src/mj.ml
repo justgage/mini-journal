@@ -3,9 +3,8 @@ open Core.Out_channel
 open CalendarLib
 open Printf
 
-
-
-let get_home_file name = 
+(** returns a string of the filename path *)
+let file_name_path name = 
   let homeOpt = Sys.getenv "HOME" in
   let fname = ".jrnl-" ^ name ^ ".md" in
   match homeOpt with
@@ -13,15 +12,22 @@ let get_home_file name =
     | None -> "~/" ^ fname
 ;;
 
+(** Will append an entry to a file *)
 let file_append name entry = 
-  let now = Printer.Calendar.to_string (Calendar.now ()) in
-  let filename = get_home_file name in
+  let now = Printer.Calendar.sprint "%b %d %Y %a" (Calendar.now ()) in
+  let filename = file_name_path name in
   let outc = Core.Out_channel.create ~append:true filename in
   fprintf outc "%s: %s\n\n" now entry;
   Core.Out_channel.close outc
 ;;
 
-let entry_add name entry =
+(** Will make a new entry*)
+let entry_add name_opt entry =
+  let name = match name_opt with
+  | Some x -> x
+  | None -> "default"
+  in
+  
   printf "Appending to: %s\n" name;
   file_append name entry
 ;; (* needs more *)
@@ -29,8 +35,8 @@ let entry_add name entry =
 let spec =
   let open Command.Spec in
   empty
-  +> anon ("name" %: string) (* anonomus entry *)
-  +> anon ("entry" %: string)
+  +> flag "-n" (optional string) ~doc: "The name of the jornal (makes a new one if it doesn't exist)" (* anonomus entry *)
+  +> flag "-m" (required string) ~doc: "the message of the entry"
 
 let command = 
   Command.basic

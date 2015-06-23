@@ -1,0 +1,5 @@
+"Rule: ocaml dependencies ml (%=src/jrnl )": "\199P\183\251L\2284\024\194\238\021\166s\220\n\n"
+"Rule: ocaml: ml & cmi -> cmx & o (%=src/jrnl )": "\204q\149\195;\142\241\208\172\248`\217R\186`h"
+"Rule: ocaml: ml -> cmo & cmi (%=src/jrnl )": "\019\200'=k\138\025\134\007\228\218\219\204\005\236U"
+"Rule: ocaml: cmx* & o* -> native (%=src/jrnl )": " \146\238\166\016\027\206\202\212[\172\136i\180\234r"
+"Resource: /home/justgage/code/ocaml/mini-jrnl/src/jrnl.ml": "~\r\252\228\204\253<\195\145N\190\181\133\175H\230"

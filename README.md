@@ -22,7 +22,7 @@ then to build a native binary: `make`
 # Usage:
 
 ```
-$ mj myJournalName "This is an entry"
+$ mj -n myJournalName -m "This is an entry"
 
 ```
 

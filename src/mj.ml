@@ -5,8 +5,6 @@ open Printf
 
 let dir_name = "mini-journal/";;
 
-(* let get_entries =  *)
-
 let get_home () =
   let homeOpt = Sys.getenv "HOME" in
   match homeOpt with
@@ -14,6 +12,7 @@ let get_home () =
     | None -> "~/" (* we can only hope *)
 ;;
 
+(* creates the folder if it doesn't exist* *)
 let touch_folder name = Unix.mkdir_p ((get_home ()) ^ dir_name ^ name);;
 
 (** returns a string of the filename path *)
@@ -49,14 +48,14 @@ let spec =
   let open Command.Spec in
   empty
   +> flag "-n" (optional string) ~doc: "name of the jornal (makes a new one if it doesn't exist)" (* anonomus entry *)
-  +> flag "-m" (required string) ~doc: "message of the entry"
+  +> anon ("message" %: string) (* ~doc: "message of the entry" *)
 
 let command = 
   Command.basic
-  ~summary: "Add a jrnl entry :)"
-  ~readme:(fun () -> "More detailed info")
+  ~summary: "This is mini-journal! It provides a git commit style journaling"
+  ~readme:(fun () -> "This should have more detailed info... but it doesn't yet")
   spec
-  (fun name entry () -> entry_add name entry)
+  (fun name message () -> entry_add name message)
 
 let () =
   Time_Zone.change Time_Zone.Local;;

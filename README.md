@@ -6,19 +6,33 @@ Simple journaling from the command line written mostly to learn about OCaml.
 
 if you want a short entry do:
 
-```
+```sh
 $ mj -m "Today I Learned OCaml"
 journal entry added to: /Users/you/mini-journal/default/2015-06-26-Fri.md
 ```
 
+This will ammend to the file, never edit it directly. the entries look like this:
+
+```md
+**01:07:59 PM:** An entry
+
+
+**01:48:01 PM:** Another
+
+**02:02:12 PM:** Today I Learned OCaml
 ```
+
+
+if you want it to be a different journal then you can spesify a name with `-n`
+
+```sh
 $ mj -n ocamlJournal -m "This will go in a different folder"
 journal entry added to: /Users/you/mini-journal/ocamlJournal/2015-06-26-Fri.md
 ```
 
 Running it without arguments like so:
 
-```
+```sh
 $ mj
 ```
 

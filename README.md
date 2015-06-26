@@ -9,15 +9,11 @@ You must have installed:
 - OCaml
 - opam
 
-opam packages you need:
-
-- core
-- calendar
-
-install them with: `opam install core calendar`
+install the opam packages you need with: `make opam`
 
 then to build a native binary: `make`
 
+to move that binary to local bin: `make install`
 
 # Usage:
 

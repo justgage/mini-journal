@@ -1,6 +1,7 @@
 main:
 	corebuild src/mj.native -pkgs calendar
-	mv mj.native mj
+	rm mj.native
+	cp _build/src/mj.native ./mj
 opam:
 	opam install core calendar
 install:

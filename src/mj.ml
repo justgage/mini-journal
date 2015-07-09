@@ -34,7 +34,7 @@ let file_append name entry =
 
 
 let use_editor editor =
-  let filename = (Filename.temp_file "mj" "entry") in
+  let filename = (Filename.temp_file ("__") ".md") in
   let _ = Sys.command (editor ^ " " ^ filename) in
   let chan = In_channel.create filename in
   In_channel.input_all chan
@@ -52,39 +52,51 @@ let get_editor () =
 
 let rec check_coverage ndays name = 
   match ndays with
-  | 0. -> printf "0\n";()
+  | -1. -> ()
   | n -> 
       let now = Calendar.now () |> Calendar.to_unixfloat in
       let before = Timetravel.subtract_days n now in
       let fname = file_name_path (Calendar.from_unixfloat before) name in
+      check_coverage (ndays -. 1.0) name;
       match Sys.file_exists (fname) with
-      | `No -> printf   "Missing : %s\n" fname
-      | `Yes ->  printf "Found   : %s\n" fname
-      | `Unknown -> printf "Missing entry?"
-      ;
-      check_coverage (ndays -. 1.0) name
+      | `Unknown -> printf "Missing entry?\n";
+      | `Yes     -> printf  "   Entry : %s\n" fname
+      | `No      -> (
+          if (Timetravel.is_weekday before) then
+            (printf         " Missing : %s\n" fname)
+          else
+            (printf "\n")
+      )
+      
+
+(* let prompt_take_care =  *)
+
+
 
 (** Will make a new entry*)
-let entry_add name_opt entry_opt =
+let entry_add name_opt entry_opt date =
   let entry = match entry_opt with
   | Some x -> x
   | None -> get_editor ()
-  in
+      in
   let name = match name_opt with
   | Some x -> x
   | None -> "default"
-  in
-  check_coverage 60.0 name;
+  in (
+    check_coverage 30.0 name;
   if String.equal (String.strip entry) "" then (
-    printf "Journal Entry was empty\n";
+    printf "\nJournal entry was empty and so it wasn't saved\n";
     exit 0;
   ) else (
-    let filename = file_name_path (Calendar.now ()) name in
-    printf "journal entry added to: %s\n" filename;
+    let filename = file_name_path date name in (
+      printf "journal entry added to: %s\n" filename;
     file_append name entry
+  )
+    )
   );;
 
-
+let entry_add_today name_opt entry_opt =
+  entry_add name_opt entry_opt (Calendar.now ())
 
 (* this spesifies the command line interface *)
 let spec =
@@ -93,9 +105,7 @@ let spec =
   +> flag "-n" (optional string) ~doc: "name of the jornal (makes a new one if it doesn't exist)" (* anonomus entry *)
   +> flag "-m" (optional string) ~doc: "Message of the entry" (* anonomus entry *)
 
-    
-
-let parse_args name_opt entry_opt () = entry_add name_opt entry_opt
+let parse_args name_opt entry_opt () = entry_add_today name_opt entry_opt
 
 let command =
   Command.basic

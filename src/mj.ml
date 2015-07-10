@@ -34,7 +34,7 @@ let file_append name entry =
 
 
 let use_editor editor =
-  let filename = (Filename.temp_file ("__") ".md") in
+  let filename = (Filename.temp_file "mini-journal" ".md") in
   let _ = Sys.command (editor ^ " " ^ filename) in
   let chan = In_channel.create filename in
   In_channel.input_all chan
@@ -50,6 +50,7 @@ let get_editor () =
   | Some editor_name -> use_editor editor_name
   | None -> printf "If you set you $EDITOR enviorment variable then this will use that"; get_std_input ()
 
+
 let rec check_coverage ndays name = 
   match ndays with
   | -1. -> ()
@@ -57,17 +58,17 @@ let rec check_coverage ndays name =
       let now = Calendar.now () |> Calendar.to_unixfloat in
       let before = Timetravel.subtract_days n now in
       let fname = file_name_path (Calendar.from_unixfloat before) name in
-      check_coverage (ndays -. 1.0) name;
       match Sys.file_exists (fname) with
-      | `Unknown -> printf "Missing entry?\n";
+      | `Unknown -> ()
       | `Yes     -> printf  "   Entry : %s\n" fname
       | `No      -> (
           if (Timetravel.is_weekday before) then
             (printf         " Missing : %s\n" fname)
           else
             (printf "\n")
-      )
-      
+      );
+      check_coverage (ndays -. 1.0) name
+
 
 (* let prompt_take_care =  *)
 

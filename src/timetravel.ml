@@ -21,9 +21,16 @@ module Timetravel = struct
     let wday = float_date 
                 |> Calendar.from_unixfloat
                 |> Calendar.day_of_week
-    in
-    (* note <> stands for inequality *)
+    in (* note <> stands for inequality *)
     wday <> Calendar.Sat && wday <> Calendar.Sun (* && wday != 6 *)
+
+let rec subtract_weekdays n float_date =
+  let date = add_days (-.n) float_date in
+  if is_weekday date then
+    date
+  else
+    subtract_weekdays 1.0 date
+
 
   (* This doesn't make sense. What if you go from a month with 31 days
    * and go to a month with 29 days? What happens then?*)

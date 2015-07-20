@@ -51,23 +51,34 @@ let get_editor () =
   | None -> printf "If you set you $EDITOR enviorment variable then this will use that"; get_std_input ()
 
 
+type coverage = 
+  | Found of float
+  | Missing of float
+  | Broken of float
+
+type coverage_list = coverage list
+
+let print_coverage name = List.iter ~f:(fun entry_coverage -> 
+  match entry_coverage with
+  | Found _ -> ()
+  | Missing date -> printf "Missing entry: %s\n" 
+                    (file_name_path (Calendar.from_unixfloat date) name)
+  | Broken date -> printf "Missing entry? %s\n" 
+                    (file_name_path (Calendar.from_unixfloat date) name)
+  )
+
 let rec check_coverage ndays name = 
   match ndays with
-  | -1. -> ()
+  | -1. -> []
   | n -> 
       let now = Calendar.now () |> Calendar.to_unixfloat in
-      let before = Timetravel.subtract_days n now in
+      let before = Timetravel.subtract_weekdays n now in
       let fname = file_name_path (Calendar.from_unixfloat before) name in
-      match Sys.file_exists (fname) with
-      | `Unknown -> ()
-      | `Yes     -> printf  "   Entry : %s\n" fname
-      | `No      -> (
-          if (Timetravel.is_weekday before) then
-            (printf         " Missing : %s\n" fname)
-          else
-            (printf "\n")
-      );
-      check_coverage (ndays -. 1.0) name
+        (match Sys.file_exists (fname) with
+        | `Unknown -> Broken before
+        | `Yes     -> Found before
+        | `No      -> Missing before)
+      :: check_coverage (ndays -. 1.0) name
 
 
 (* let prompt_take_care =  *)
@@ -84,7 +95,7 @@ let entry_add name_opt entry_opt date =
   | Some x -> x
   | None -> "default"
   in (
-    check_coverage 30.0 name;
+    check_coverage 30.0 name |> print_coverage name;
   if String.equal (String.strip entry) "" then (
     printf "\nJournal entry was empty and so it wasn't saved\n";
     exit 0;

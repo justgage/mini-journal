@@ -114,6 +114,7 @@ let entry_add_today name_opt entry_opt =
 let spec =
   let open Command.Spec in
   empty
+  +> flag "-c" (optional bool) ~doc: "coverage" (* anonomus entry *)
   +> flag "-n" (optional string) ~doc: "name of the jornal (makes a new one if it doesn't exist)" (* anonomus entry *)
   +> flag "-m" (optional string) ~doc: "Message of the entry" (* anonomus entry *)
 

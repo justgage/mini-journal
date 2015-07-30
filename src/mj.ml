@@ -33,8 +33,8 @@ let file_append name entry =
   Out_channel.close outc
 
 
-let use_editor editor =
-  let filename = (Filename.temp_file "mini-journal" ".md") in
+let use_editor editor date_str =
+  let filename = (Filename.temp_file date_str ".md") in
   let _ = Sys.command (editor ^ " " ^ filename) in
   let chan = In_channel.create filename in
   In_channel.input_all chan
@@ -45,10 +45,10 @@ let get_std_input () =
   In_channel.input_all In_channel.stdin
 
 (* get's the editor name *)
-let get_editor () =
+let get_editor date_str =
   match Sys.getenv "EDITOR" with
-  | Some editor_name -> use_editor editor_name
-  | None -> printf "If you set you $EDITOR enviorment variable then this will use that"; get_std_input ()
+  | Some editor_name -> use_editor editor_name date_str
+  | None -> printf "If you set you $EDITOR enviorment variable then this will use that\n %s " date_str; get_std_input ()
 
 
 type coverage = 
@@ -60,7 +60,9 @@ type coverage_list = coverage list
 
 let print_coverage name = List.iter ~f:(fun entry_coverage -> 
   match entry_coverage with
-  | Found _ -> ()
+  | Found date   -> printf "               %s\n" 
+                    (file_name_path (Calendar.from_unixfloat date) name)
+
   | Missing date -> printf "Missing entry: %s\n" 
                     (file_name_path (Calendar.from_unixfloat date) name)
   | Broken date -> printf "Missing entry? %s\n" 
@@ -84,18 +86,19 @@ let rec check_coverage ndays name =
 (* let prompt_take_care =  *)
 
 
+let def_name name_opt =
+  match name_opt with
+  | Some x -> x
+  | None -> "default"
 
 (** Will make a new entry*)
 let entry_add name_opt entry_opt date =
   let entry = match entry_opt with
   | Some x -> x
-  | None -> get_editor ()
+  | None -> get_editor (Printer.Calendar.sprint "%F-%a" date)
       in
-  let name = match name_opt with
-  | Some x -> x
-  | None -> "default"
-  in (
-    check_coverage 30.0 name |> print_coverage name;
+  let name = def_name name_opt 
+    in (
   if String.equal (String.strip entry) "" then (
     printf "\nJournal entry was empty and so it wasn't saved\n";
     exit 0;
@@ -110,15 +113,36 @@ let entry_add name_opt entry_opt date =
 let entry_add_today name_opt entry_opt =
   entry_add name_opt entry_opt (Calendar.now ())
 
+let entry_add_missing days name = 
+  check_coverage (Float.of_int days) name 
+  |> List.iter ~f:(fun entry_coverage -> 
+  match entry_coverage with
+  | Found _   -> ()
+  | Broken _  -> ()
+  | Missing date -> entry_add  (Some name) None (Calendar.from_unixfloat date)
+  )
+
 (* this spesifies the command line interface *)
 let spec =
   let open Command.Spec in
   empty
   +> flag "-c" (optional bool) ~doc: "coverage" (* anonomus entry *)
+  +> flag "-cu" (optional int) ~doc: "coverage catch up" (* anonomus entry *)
   +> flag "-n" (optional string) ~doc: "name of the jornal (makes a new one if it doesn't exist)" (* anonomus entry *)
   +> flag "-m" (optional string) ~doc: "Message of the entry" (* anonomus entry *)
 
-let parse_args name_opt entry_opt () = entry_add_today name_opt entry_opt
+let parse_args coverage_opt coverage_catchup_opt name_opt entry_opt () = 
+  let name = (def_name name_opt) in
+  match coverage_catchup_opt with (* if we only check coverage *)
+  | Some days -> entry_add_missing days name
+  | None -> 
+  match coverage_opt with (* if we only check coverage *)
+  | Some _ -> 
+      check_coverage 30.0 name |> print_coverage name
+  | None -> (
+    entry_add_today name_opt entry_opt;
+    check_coverage 30.0 name |> print_coverage name
+  )
 
 let command =
   Command.basic

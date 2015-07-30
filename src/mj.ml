@@ -15,6 +15,8 @@ let get_home () =
 (* creates the folder if it doesn't exist* *)
 let touch_folder name = Unix.mkdir_p ((get_home ()) ^ dir_name ^ name)
 
+let mj_dir () = (get_home ()) ^ dir_name
+
 (** returns a string of the filename path *)
 let file_name_path date name =
   let now_string = Printer.Calendar.sprint "%F-%a" date in
@@ -22,12 +24,11 @@ let file_name_path date name =
   let name = name ^ "/" in
   home ^ dir_name ^ name ^ now_string  ^ ".md"
 
-
 (** Will append an entry to a file *)
-let file_append name entry =
+let file_append name entry date =
   touch_folder name;
-  let now_string = Printer.Calendar.sprint "%r" (Calendar.now ()) in (* just the time *)
-  let filename = file_name_path (Calendar.now ()) name in
+  let now_string = Printer.Calendar.sprint "%r" date in (* just the time *)
+  let filename = file_name_path date name in
   let outc = Core.Out_channel.create ~append:true filename in
   fprintf outc "**%s:** %s\n\n" now_string entry; (* entry text *)
   Out_channel.close outc
@@ -58,7 +59,7 @@ type coverage =
 
 type coverage_list = coverage list
 
-let print_coverage name = List.iter ~f:(fun entry_coverage -> 
+let print_coverage name =  List.iter ~f:(fun entry_coverage -> 
   match entry_coverage with
   | Found date   -> printf "               %s\n" 
                     (file_name_path (Calendar.from_unixfloat date) name)
@@ -105,7 +106,7 @@ let entry_add name_opt entry_opt date =
   ) else (
     let filename = file_name_path date name in (
       printf "journal entry added to: %s\n" filename;
-    file_append name entry
+    file_append name entry date
   )
     )
   );;
@@ -119,20 +120,30 @@ let entry_add_missing days name =
   match entry_coverage with
   | Found _   -> ()
   | Broken _  -> ()
-  | Missing date -> entry_add  (Some name) None (Calendar.from_unixfloat date)
+  | Missing date -> entry_add (Some name) None (Calendar.from_unixfloat date)
   )
 
 (* this spesifies the command line interface *)
 let spec =
   let open Command.Spec in
   empty
-  +> flag "-c" (optional bool) ~doc: "coverage" (* anonomus entry *)
-  +> flag "-cu" (optional int) ~doc: "coverage catch up" (* anonomus entry *)
+  +> flag "-c" (optional bool) ~doc: "coverage (bool)"
+  +> flag "-p" (optional bool) ~doc: "push"
+  +> flag "-cu" (optional int) ~doc: "coverage catch up (days span)"
   +> flag "-n" (optional string) ~doc: "name of the jornal (makes a new one if it doesn't exist)" (* anonomus entry *)
   +> flag "-m" (optional string) ~doc: "Message of the entry" (* anonomus entry *)
 
-let parse_args coverage_opt coverage_catchup_opt name_opt entry_opt () = 
-  let name = (def_name name_opt) in
+let parse_args coverage_opt push_opt coverage_catchup_opt name_opt entry_opt () = 
+  match push_opt with
+  | Some true -> 
+      printf "Syncing... %s" (get_home ());
+      Sys.chdir (mj_dir ());
+      let _ = Sys.command "git add ." in
+      let _ = Sys.command "git commit -m 'save entries'" in 
+      let _ = Sys.command "git push" in
+      printf "Synced to via git\n"
+  | Some false | None -> 
+      let name = (def_name name_opt) in
   match coverage_catchup_opt with (* if we only check coverage *)
   | Some days -> entry_add_missing days name
   | None -> 

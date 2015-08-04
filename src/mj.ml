@@ -70,19 +70,17 @@ let print_coverage name =  List.iter ~f:(fun entry_coverage ->
                     (file_name_path (Calendar.from_unixfloat date) name)
   )
 
-let rec check_coverage ndays name = 
-  match ndays with
-  | -1. -> []
-  | n -> 
-      let now = Calendar.now () |> Calendar.to_unixfloat in
-      let before = Timetravel.subtract_weekdays n now in
-      let fname = file_name_path (Calendar.from_unixfloat before) name in
-        (match Sys.file_exists (fname) with
-        | `Unknown -> Broken before
-        | `Yes     -> Found before
-        | `No      -> Missing before)
-      :: check_coverage (ndays -. 1.0) name
-
+let check_coverage ndays name = 
+  let now = Calendar.now () |> Calendar.to_unixfloat in
+  Timetravel.weekday_range ndays now
+  |> List.map ~f:
+    (fun date -> 
+      let fname = file_name_path (Calendar.from_unixfloat date) name in
+      (match Sys.file_exists (fname) with
+        | `Unknown -> Broken date
+        | `Yes     -> Found date
+        | `No      -> Missing date)
+      )
 
 (* let prompt_take_care =  *)
 
@@ -115,7 +113,7 @@ let entry_add_today name_opt entry_opt =
   entry_add name_opt entry_opt (Calendar.now ())
 
 let entry_add_missing days name = 
-  check_coverage (Float.of_int days) name 
+  check_coverage days name 
   |> List.iter ~f:(fun entry_coverage -> 
   match entry_coverage with
   | Found _   -> ()
@@ -149,10 +147,10 @@ let parse_args coverage_opt push_opt coverage_catchup_opt name_opt entry_opt () 
   | None -> 
   match coverage_opt with (* if we only check coverage *)
   | Some _ -> 
-      check_coverage 30.0 name |> print_coverage name
+      check_coverage 30 name |> print_coverage name
   | None -> (
     entry_add_today name_opt entry_opt;
-    check_coverage 30.0 name |> print_coverage name
+    check_coverage 30 name |> print_coverage name
   )
 
 let command =

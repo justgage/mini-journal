@@ -25,11 +25,20 @@ module Timetravel = struct
     wday <> Calendar.Sat && wday <> Calendar.Sun (* && wday != 6 *)
 
 let rec subtract_weekdays n float_date =
-  let date = add_days (-.n) float_date in
+  let date = subtract_days n float_date in
   if is_weekday date then
     date
   else
     subtract_weekdays 1.0 date
+
+(* will return a list of weekdays *)
+let rec weekday_range n date = 
+  if n < 0 then
+    []
+  else
+    let next_date = subtract_weekdays 1.0 date in
+    next_date :: weekday_range (n - 1) next_date
+
 
 
   (* This doesn't make sense. What if you go from a month with 31 days

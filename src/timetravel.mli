@@ -1,8 +1,4 @@
 module Timetravel: sig
-  (* type status =   *)
-  (*   | Yes_entry a of string *)
-  (*   | No_entry a of string *)
-  (*   | Weekday *)
   val add_seconds : float -> float -> float
   val add_minutes : float -> float -> float
   val add_hours : float -> float -> float
@@ -11,4 +7,5 @@ module Timetravel: sig
   val subtract_weekdays : float -> float -> float
   val add_years : float -> float -> float
   val is_weekday : float -> bool
+  val weekday_range : int -> float -> float list
 end

@@ -71,7 +71,7 @@ type coverage =
 type coverage_list = coverage list
 
 let print_coverage name =  List.iter ~f:(fun entry_coverage -> 
-  let date_name x = (Calendar.from_unixfloat x |> (Printer.Calendar.sprint "%F-%a") ) in
+  let date_name x = (Calendar.from_unixfloat x |> (Printer.Calendar.sprint "%b %d, %Y  %a") ) in
   match entry_coverage with
   | Found date   -> printf "%s  %s\n" (Colors.green "✔") (Colors.magenta @@ date_name date )
   | Missing date -> printf  "   %s\n" (date_name date)

@@ -4,6 +4,17 @@ open CalendarLib
 open Printf
 open Timetravel
 
+module Colors = struct
+  let normal = "\027[0m"
+  let colorize color str = "\027[" ^ color ^ "m" ^ str ^ normal
+  let cyan = colorize "36"
+  let red = colorize "31"
+  let blue = colorize "34"
+  let green = colorize "32"
+  let yellow = colorize "33"
+  let magenta = colorize "35"
+end
+
 let dir_name = "mini-journal/"
 
 let get_home () =
@@ -60,14 +71,11 @@ type coverage =
 type coverage_list = coverage list
 
 let print_coverage name =  List.iter ~f:(fun entry_coverage -> 
+  let date_name x = (Calendar.from_unixfloat x |> (Printer.Calendar.sprint "%F-%a") ) in
   match entry_coverage with
-  | Found date   -> printf "               %s\n" 
-                    (file_name_path (Calendar.from_unixfloat date) name)
-
-  | Missing date -> printf "Missing entry: %s\n" 
-                    (file_name_path (Calendar.from_unixfloat date) name)
-  | Broken date -> printf "Missing entry? %s\n" 
-                    (file_name_path (Calendar.from_unixfloat date) name)
+  | Found date   -> printf "%s  %s\n" (Colors.green "✔") (Colors.magenta @@ date_name date )
+  | Missing date -> printf  "   %s\n" (date_name date)
+  | Broken date -> printf  "%s  %s\n" "?" (Colors.red @@ date_name date )
   )
 
 let check_coverage ndays name = 

@@ -8,4 +8,5 @@ module Timetravel: sig
   val add_years : float -> float -> float
   val is_weekday : float -> bool
   val weekday_range : int -> float -> float list
+  val weekdays_to_date : early_date:float -> later_date:float -> float list 
 end

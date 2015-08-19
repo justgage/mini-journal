@@ -39,7 +39,13 @@ let rec weekday_range n date =
     let next_date = subtract_weekdays 1.0 date in
     next_date :: weekday_range (n - 1) next_date
 
-
+(* will return a list of weekdays *)
+let rec weekdays_to_date ~early_date ~later_date = 
+  if early_date >= later_date then
+    []
+  else
+    let later_date_less = subtract_weekdays 1.0 later_date in
+    later_date_less :: weekdays_to_date early_date later_date_less
 
   (* This doesn't make sense. What if you go from a month with 31 days
    * and go to a month with 29 days? What happens then?*)

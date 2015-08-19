@@ -78,6 +78,18 @@ let print_coverage name =  List.iter ~f:(fun entry_coverage ->
   | Broken date -> printf  "%s  %s\n" "?" (Colors.red @@ date_name date )
   )
 
+let check_coverage_date first_date name = 
+  let now = Calendar.now () |> Calendar.to_unixfloat in
+  (Timetravel.weekdays_to_date ~early_date:first_date ~later_date:now)
+  |> List.map 
+  ~f:(fun date -> 
+      let fname = file_name_path (Calendar.from_unixfloat date) name in
+      (match Sys.file_exists (fname) with
+        | `Unknown -> Broken date
+        | `Yes     -> Found date
+        | `No      -> Missing date)
+      )
+
 let check_coverage ndays name = 
   let now = Calendar.now () |> Calendar.to_unixfloat in
   Timetravel.weekday_range ndays now
@@ -133,13 +145,15 @@ let entry_add_missing days name =
 let spec =
   let open Command.Spec in
   empty
-  +> flag "-c" (optional bool) ~doc: "coverage (bool)"
-  +> flag "-p" (optional bool) ~doc: "push"
-  +> flag "-cu" (optional int) ~doc: "coverage catch up (days span)"
-  +> flag "-n" (optional string) ~doc: "name of the jornal (makes a new one if it doesn't exist)" (* anonomus entry *)
-  +> flag "-m" (optional string) ~doc: "Message of the entry" (* anonomus entry *)
+  +> flag "first-day" (optional bool) ~doc: "coverage (days span)"
+  +> flag "coverage" (optional int)   ~doc: "coverage (days span)"
+  +> flag "push" (optional bool)      ~doc: "(bool) git push"
+  +> flag "cu" (optional int)         ~doc: "(days span) coverage catch up "
+  +> flag "name" (optional string)    ~doc: "name of the jornal (makes a new one if it doesn't exist)" (* anonomus entry *)
+  +> flag "message" (optional string) ~doc: "Message of the entry" (* anonomus entry *)
 
-let parse_args coverage_opt push_opt coverage_catchup_opt name_opt entry_opt () = 
+let parse_args first_op coverage_opt push_opt coverage_catchup_opt name_opt entry_opt () = 
+  let first_day = ((Printer.Calendar.from_string "2015-05-26 23:24:08") |> Calendar.to_unixfloat ) in
   match push_opt with
   | Some true -> 
       printf "Syncing... %s" (get_home ());
@@ -150,16 +164,21 @@ let parse_args coverage_opt push_opt coverage_catchup_opt name_opt entry_opt () 
       printf "Synced to via git\n"
   | Some false | None -> 
       let name = (def_name name_opt) in
+
   match coverage_catchup_opt with (* if we only check coverage *)
   | Some days -> entry_add_missing days name
   | None -> 
+
+  match first_op with (* if we only check coverage *)
+  | Some x ->
+    (check_coverage_date first_day name) |> print_coverage name
+  | None -> 
+
   match coverage_opt with (* if we only check coverage *)
-  | Some _ -> 
-      check_coverage 30 name |> print_coverage name
-  | None -> (
-    entry_add_today name_opt entry_opt;
-    check_coverage 30 name |> print_coverage name
-  )
+  | Some x -> 
+      check_coverage x name |> print_coverage name
+  | None -> entry_add_today name_opt entry_opt
+
 
 let command =
   Command.basic
